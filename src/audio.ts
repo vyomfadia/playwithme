@@ -149,8 +149,9 @@ export interface AudioPlayback {
 }
 
 export function startPlayback(outputDevice?: string): AudioPlayback {
-  const bufferSamples = CONFIG.samplesPerChunk * 2
+  const bufferSamples = Math.floor(CONFIG.sampleRate * 0.1)
   const args = [
+    '-q', // quiet mode - suppress progress
     '-t',
     'raw',
     '-r',
@@ -184,15 +185,22 @@ export function startPlayback(outputDevice?: string): AudioPlayback {
   })()
 
   const stdin = proc.stdin as FileSink
+  let bytesWritten = 0
+  const flushThreshold = Math.floor(CONFIG.sampleRate * CONFIG.channels * (CONFIG.bitDepth / 8) * 0.1)
 
   return {
     process: proc,
     stdin,
     write: async (data: Uint8Array) => {
       stdin.write(data)
-      await stdin.flush()
+      bytesWritten += data.length
+      if (bytesWritten >= flushThreshold) {
+        await stdin.flush()
+        bytesWritten = 0
+      }
     },
     stop: () => {
+      stdin.flush()
       stdin.end()
       proc.kill()
     },

@@ -190,8 +190,9 @@ function sendReady(state: ClientState): void {
 }
 
 async function playbackLoop(state: ClientState): Promise<void> {
-  while (!state.sync.isSynced || state.buffer.length < 2) {
-    await sleep(5)
+  const minBufferChunks = Math.ceil(CONFIG.targetBufferMs / CONFIG.chunkDurationMs)
+  while (!state.sync.isSynced || state.buffer.length < minBufferChunks) {
+    await sleep(10)
   }
 
   console.log('starting playback' + (state.outputDevice ? ` on ${state.outputDevice}` : ''))
@@ -200,25 +201,35 @@ async function playbackLoop(state: ClientState): Promise<void> {
 
   let lastStatsTime = now()
   let chunksPlayed = 0
+  
+  const batchSize = Math.max(2, Math.ceil(CONFIG.targetBufferMs / CONFIG.chunkDurationMs / 2))
 
-  const pollIntervalMs = Math.max(1, Math.floor(CONFIG.chunkDurationMs / 4))
   while (state.isConnected) {
     const currentTime = now()
-    let chunksWritten = 0
-
-    while (state.buffer.length > 0) {
+    const chunksToPlay: Uint8Array[] = []
+    
+    while (state.buffer.length > 0 && chunksToPlay.length < batchSize) {
       const firstChunk = state.buffer[0]
       if (!firstChunk || firstChunk.playTime > currentTime) break
 
       const shifted = state.buffer.shift()
       if (!shifted) break
+      
+      chunksToPlay.push(shifted.chunk.data)
+    }
 
+    if (chunksToPlay.length > 0 && state.playback) {
       try {
-        if (state.playback) {
-          await state.playback.write(shifted.chunk.data)
-          chunksPlayed++
-          chunksWritten++
+        const totalLength = chunksToPlay.reduce((sum, chunk) => sum + chunk.length, 0)
+        const batch = new Uint8Array(totalLength)
+        let offset = 0
+        for (const chunk of chunksToPlay) {
+          batch.set(chunk, offset)
+          offset += chunk.length
         }
+        
+        await state.playback.write(batch)
+        chunksPlayed += chunksToPlay.length
       } catch (err) {
         console.error('failed to write audio:', err)
         break
@@ -241,7 +252,7 @@ async function playbackLoop(state: ClientState): Promise<void> {
       lastStatsTime = currentTime
     }
 
-    await sleep(chunksWritten > 0 ? 1 : pollIntervalMs)
+    await sleep(Math.floor(CONFIG.chunkDurationMs / 2))
   }
 }
 
