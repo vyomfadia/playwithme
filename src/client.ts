@@ -190,8 +190,8 @@ function sendReady(state: ClientState): void {
 }
 
 async function playbackLoop(state: ClientState): Promise<void> {
-  while (!state.sync.isSynced || state.buffer.length < 3) {
-    await sleep(10)
+  while (!state.sync.isSynced || state.buffer.length < 2) {
+    await sleep(5)
   }
 
   console.log('starting playback' + (state.outputDevice ? ` on ${state.outputDevice}` : ''))
@@ -201,8 +201,10 @@ async function playbackLoop(state: ClientState): Promise<void> {
   let lastStatsTime = now()
   let chunksPlayed = 0
 
+  const pollIntervalMs = Math.max(1, Math.floor(CONFIG.chunkDurationMs / 4))
   while (state.isConnected) {
     const currentTime = now()
+    let chunksWritten = 0
 
     while (state.buffer.length > 0) {
       const firstChunk = state.buffer[0]
@@ -215,6 +217,7 @@ async function playbackLoop(state: ClientState): Promise<void> {
         if (state.playback) {
           await state.playback.write(shifted.chunk.data)
           chunksPlayed++
+          chunksWritten++
         }
       } catch (err) {
         console.error('failed to write audio:', err)
@@ -238,7 +241,7 @@ async function playbackLoop(state: ClientState): Promise<void> {
       lastStatsTime = currentTime
     }
 
-    await sleep(1)
+    await sleep(chunksWritten > 0 ? 1 : pollIntervalMs)
   }
 }
 

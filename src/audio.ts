@@ -149,6 +149,7 @@ export interface AudioPlayback {
 }
 
 export function startPlayback(outputDevice?: string): AudioPlayback {
+  const bufferSamples = CONFIG.samplesPerChunk * 2
   const args = [
     '-t',
     'raw',
@@ -160,6 +161,8 @@ export function startPlayback(outputDevice?: string): AudioPlayback {
     CONFIG.bitDepth.toString(),
     '-e',
     'signed-integer',
+    '--buffer',
+    bufferSamples.toString(),
     '-',
     '-d',
   ]
@@ -187,6 +190,7 @@ export function startPlayback(outputDevice?: string): AudioPlayback {
     stdin,
     write: async (data: Uint8Array) => {
       stdin.write(data)
+      await stdin.flush()
     },
     stop: () => {
       stdin.end()
@@ -200,6 +204,14 @@ export function startPlaybackFFplay(): AudioPlayback {
     '-hide_banner',
     '-loglevel',
     'error',
+    '-fflags',
+    'nobuffer',
+    '-flags',
+    'low_delay',
+    '-probesize',
+    '32',
+    '-analyzeduration',
+    '0',
     '-f',
     's16le',
     '-ar',
@@ -226,6 +238,7 @@ export function startPlaybackFFplay(): AudioPlayback {
     stdin,
     write: async (data: Uint8Array) => {
       stdin.write(data)
+      await stdin.flush()
     },
     stop: () => {
       stdin.end()

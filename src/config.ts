@@ -16,9 +16,9 @@ export const CONFIG = {
 
   syncIntervalMs: 1000,
   syncSamples: 5,
-  targetBufferMs: 150,
-  minBufferMs: 50,
-  maxBufferMs: 500,
+  targetBufferMs: 60,
+  minBufferMs: 30,
+  maxBufferMs: 200,
   maxDriftMs: 5,
   driftCorrectionSamples: 1,
 } as const
