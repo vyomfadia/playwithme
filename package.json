@@ -10,6 +10,7 @@
     "devices": "bun run src/cli.ts devices",
     "server": "bun run src/cli.ts server",
     "client": "bun run src/cli.ts client",
+    "web": "bun run src/cli.ts web",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write ."

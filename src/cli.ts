@@ -4,6 +4,7 @@ import { findDevice, listAudioDevices, listOutputDevices } from './audio'
 import { startClient } from './client'
 import { CONFIG } from './config'
 import { startServer } from './server'
+import { startWebClient } from './web-client'
 
 const program = new Command()
 
@@ -75,6 +76,31 @@ program
       await startClient({ serverUrl, outputDevice: options.output })
     } catch (err) {
       console.error('client error:', err)
+      process.exit(1)
+    }
+  })
+
+program
+  .command('web')
+  .description('start web-based client (opens in browser)')
+  .option('-p, --port <port>', 'web server port', '3000')
+  .option('-s, --server <url>', 'audio server url', `ws://localhost:${CONFIG.defaultPort}`)
+  .action(async (options) => {
+    const port = parseInt(options.port, 10)
+    let serverUrl = options.server
+
+    if (!serverUrl.startsWith('ws://') && !serverUrl.startsWith('wss://')) {
+      serverUrl = `ws://${serverUrl}`
+    }
+
+    if (!serverUrl.match(/:\d+$/)) {
+      serverUrl = `${serverUrl}:${CONFIG.defaultPort}`
+    }
+
+    try {
+      await startWebClient({ port, serverUrl })
+    } catch (err) {
+      console.error('web client error:', err)
       process.exit(1)
     }
   })
