@@ -47,6 +47,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
   console.log(`capturing from device: ${options.device}`)
 
   const server = Bun.serve<ClientData>({
+    hostname: "0.0.0.0",
     port: options.port,
 
     fetch(req, server) {
@@ -102,7 +103,7 @@ export async function startServer(options: ServerOptions): Promise<void> {
     },
   })
 
-  console.log(`listening on ws://localhost:${server.port}`)
+  console.log(`listening on ws://0.0.0.0:${server.port}`)
 
   try {
     state.capture = startCapture(options.device)

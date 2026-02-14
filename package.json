@@ -7,7 +7,7 @@
     "playme": "./src/cli.ts"
   },
   "scripts": {
-    "start": "bun run src/cli.ts",
+    "devices": "bun run src/cli.ts devices",
     "server": "bun run src/cli.ts server",
     "client": "bun run src/cli.ts client",
     "lint": "biome lint .",

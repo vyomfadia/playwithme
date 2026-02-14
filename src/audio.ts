@@ -5,6 +5,7 @@ export interface AudioDevice {
   index: number
   name: string
   isInput: boolean
+  isOutput: boolean
 }
 
 export async function listAudioDevices(): Promise<AudioDevice[]> {
@@ -34,6 +35,7 @@ export async function listAudioDevices(): Promise<AudioDevice[]> {
           index: parseInt(match[1], 10),
           name: match[2].trim(),
           isInput: true,
+          isOutput: false,
         })
       }
 
@@ -44,6 +46,46 @@ export async function listAudioDevices(): Promise<AudioDevice[]> {
         break
       }
     }
+  }
+
+  return devices
+}
+
+export async function listOutputDevices(): Promise<AudioDevice[]> {
+  const proc = spawn({
+    cmd: ['system_profiler', 'SPAudioDataType', '-json'],
+    stdout: 'pipe',
+    stderr: 'pipe',
+  })
+
+  const stdout = await new Response(proc.stdout).text()
+  await proc.exited
+
+  const devices: AudioDevice[] = []
+
+  try {
+    const data = JSON.parse(stdout)
+    const audioData = data.SPAudioDataType || []
+
+    let index = 0
+    for (const section of audioData) {
+      const items = section._items || []
+      for (const item of items) {
+        // Check if device has output channels
+        const outputChannels = item.coreaudio_output_source
+        if (outputChannels || item._name) {
+          devices.push({
+            index: index++,
+            name: item._name || 'Unknown Device',
+            isInput: false,
+            isOutput: true,
+          })
+        }
+      }
+    }
+  } catch {
+    // Fallback: try sox --info or just return empty
+    console.error('failed to parse audio devices')
   }
 
   return devices
@@ -106,7 +148,7 @@ export interface AudioPlayback {
   stop: () => void
 }
 
-export function startPlayback(_outputDevice?: string): AudioPlayback {
+export function startPlayback(outputDevice?: string): AudioPlayback {
   const args = [
     '-t',
     'raw',
@@ -122,11 +164,13 @@ export function startPlayback(_outputDevice?: string): AudioPlayback {
     '-d',
   ]
 
+  const env = outputDevice ? { ...process.env, AUDIODEV: outputDevice } : undefined
   const proc = spawn({
     cmd: ['play', ...args],
     stdin: 'pipe',
     stdout: 'pipe',
     stderr: 'pipe',
+    env,
   })
 
   ;(async () => {

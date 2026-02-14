@@ -30,10 +30,12 @@ interface ClientState {
   droppedChunks: number
   lateChunks: number
   pendingSyncT1: number | null
+  outputDevice?: string
 }
 
 export interface ClientOptions {
   serverUrl: string
+  outputDevice?: string
 }
 
 export async function startClient(options: ClientOptions): Promise<void> {
@@ -49,6 +51,7 @@ export async function startClient(options: ClientOptions): Promise<void> {
     droppedChunks: 0,
     lateChunks: 0,
     pendingSyncT1: null,
+    outputDevice: options.outputDevice,
   }
 
   console.log(`connecting to ${options.serverUrl}`)
@@ -191,8 +194,8 @@ async function playbackLoop(state: ClientState): Promise<void> {
     await sleep(10)
   }
 
-  console.log('starting playback')
-  state.playback = startPlayback()
+  console.log('starting playback' + (state.outputDevice ? ` on ${state.outputDevice}` : ''))
+  state.playback = startPlayback(state.outputDevice)
   state.isPlaying = true
 
   let lastStatsTime = now()
