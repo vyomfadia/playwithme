@@ -1,9 +1,25 @@
 {
   "name": "playme",
-  "module": "index.ts",
+  "module": "src/cli.ts",
   "type": "module",
   "private": true,
+  "bin": {
+    "playme": "./src/cli.ts"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "server": "bun run src/cli.ts server",
+    "client": "bun run src/cli.ts client",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write ."
+  },
+  "dependencies": {
+    "commander": "^12.1.0",
+    "@msgpack/msgpack": "^3.0.0"
+  },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.15",
     "@types/bun": "latest"
   },
   "peerDependencies": {

@@ -1,15 +1,33 @@
 # playme
 
-To install dependencies:
+multi-device audio synchronization app mate
+
+## prereqs
+
+Install the required tools:
+
+```bash
+brew install ffmpeg sox
+
+# (only for source, virtual audio device)
+brew install blackhole-2ch
+```
+
+## setuo
 
 ```bash
 bun install
 ```
 
-To run:
+## usage
 
 ```bash
-bun run index.ts
-```
+# list devices
+bun run start devices
 
-This project was created using `bun init` in bun v1.3.9. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+# start server
+bun run server
+
+# connect to server
+bun run client --server 192.168.1.100:8765
+```
